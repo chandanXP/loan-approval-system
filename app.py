@@ -70,7 +70,7 @@ def predict_loan_status(
 
     # --- CODE BLOCK: MODEL EXECUTION ---
     if deployed_rf is None:
-        return "❌ Model failed to load. Please check your .pkl file."
+        return "Model failed to load. Please check your .pkl file."
 
     try:
         # Array strictly ordered to match the X dataframe provided
