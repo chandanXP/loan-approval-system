@@ -9,6 +9,7 @@ import gradio as gr
 # ==========================================================
 try:
     deployed_rf = joblib.load("loan_prediction_model.pkl")
+    print("Model loaded successfully!")
 except Exception as e:
     print(f"Warning: Model not found or error loading. {e}")
     deployed_rf = None
@@ -16,7 +17,6 @@ except Exception as e:
 # ==========================================================
 # Prediction Function with Error Handling
 # ==========================================================
-# --- CODE BLOCK: REFINED TO 9 FEATURES ---
 def predict_loan_status(
     no_of_dependents,
     income_annum,
@@ -28,20 +28,17 @@ def predict_loan_status(
     luxury_assets_value,
     bank_asset_value,
 ):
-    # INPUT CAPTURE & VALIDATION
     values = [
         no_of_dependents, income_annum, loan_amount, loan_term, 
         cibil_score, residential_assets_value, commercial_assets_value, 
         luxury_assets_value, bank_asset_value
     ]
-# -----------------------------------------
 
     # 1. Empty input check
     if any(v is None or str(v).strip() == "" for v in values):
         return "❌ Please fill in all the input fields."
 
     # 2. Type casting
-    # --- CODE BLOCK: REMOVED CATEGORICAL CASTING ---
     try:
         no_of_dependents = int(no_of_dependents)
         income_annum = float(income_annum)
@@ -54,25 +51,22 @@ def predict_loan_status(
         bank_asset_value = float(bank_asset_value)
     except (ValueError, TypeError):
         return "❌ Please enter valid numeric values."
-    # -----------------------------------------------
 
     # 3. Negative value check
     if any(v < 0 for v in values):
         return "❌ Negative values are not allowed for financial metrics."
 
-    # 4. Specific Range Validations
+    # 4. Range Validations
     if not (300 <= cibil_score <= 900):
         return "❌ CIBIL score must be between 300 and 900."
     
     if no_of_dependents > 20:
         return "❌ Number of dependents seems unusually high (Max 20)."
 
-    # --- CODE BLOCK: MODEL EXECUTION ---
     if deployed_rf is None:
         return "❌ Model failed to load. Please check your .pkl file."
 
     try:
-        # Array strictly ordered to match the 9-feature X dataframe
         input_data = [[
             no_of_dependents,
             income_annum,
@@ -102,39 +96,21 @@ def predict_loan_status(
 
     except Exception as e:
         return f"❌ Prediction failed.\n\nError: {str(e)}"
-    # -----------------------------------
 
 # ==========================================================
-# Description & Footer
+# Interface Setup
 # ==========================================================
 DESCRIPTION = """
 # 🏦 Loan Approval Prediction System
 
 This application predicts whether an applicant's loan will be **Approved** or **Rejected** using a trained **Random Forest Machine Learning Model**.
-
-Enter the applicant's financial and personal details below to run the assessment.
 """
 
 developer_info = """
 ### About the Developer
 **Created by:** Chandan Saroj
-
-* **LinkedIn:** [Connect with me](YOUR_LINKEDIN_URL_HERE)
-* **GitHub:** [Check out my projects](YOUR_GITHUB_URL_HERE)
-* **Instagram:** [Follow me](YOUR_INSTAGRAM_URL_HERE)
-
----
-### 🛠️ Tools & Technologies Used
-* **Machine Learning:** Scikit-learn (Random Forest Classifier)
-* **Web Framework:** Gradio
-* **Language:** Python
-* **Deployment:** Render
 """
 
-# ==========================================================
-# Interface Setup
-# ==========================================================
-# --- CODE BLOCK: REFINED UI INPUTS (9 FEATURES) ---
 interface = gr.Interface(
     fn=predict_loan_status,
     inputs=[
@@ -153,13 +129,17 @@ interface = gr.Interface(
     description=DESCRIPTION,
     article=developer_info
 )
-# --------------------------------------------------
 
 # ==========================================================
-# Launch
+# Launch Configuration
 # ==========================================================
+# --- CODE BLOCK: UPDATED PORT BINDING & UNBUFFERED LAUNCH ---
 if __name__ == "__main__":
+    # Fallback to port 10000 if PORT environment variable is not explicitly set by Render
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Starting Gradio server on 0.0.0.0:{port}...")
     interface.launch(
         server_name="0.0.0.0",
-        server_port=int(os.environ.get("PORT", 7860)),
+        server_port=port,
     )
+# ------------------------------------------------------------
