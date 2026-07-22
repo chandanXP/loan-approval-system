@@ -17,8 +17,11 @@ except Exception as e:
 # ==========================================================
 # Prediction Function with Error Handling
 # ==========================================================
+# --- CODE BLOCK: RESTORED 11 FEATURES TO MATCH .PKL FILE ---
 def predict_loan_status(
     no_of_dependents,
+    education,
+    self_employed,
     income_annum,
     loan_amount,
     loan_term,
@@ -29,9 +32,9 @@ def predict_loan_status(
     bank_asset_value,
 ):
     values = [
-        no_of_dependents, income_annum, loan_amount, loan_term, 
-        cibil_score, residential_assets_value, commercial_assets_value, 
-        luxury_assets_value, bank_asset_value
+        no_of_dependents, education, self_employed, income_annum, 
+        loan_amount, loan_term, cibil_score, residential_assets_value, 
+        commercial_assets_value, luxury_assets_value, bank_asset_value
     ]
 
     # 1. Empty input check
@@ -41,6 +44,8 @@ def predict_loan_status(
     # 2. Type casting
     try:
         no_of_dependents = int(no_of_dependents)
+        education = int(education) # Restored
+        self_employed = int(self_employed) # Restored
         income_annum = float(income_annum)
         loan_amount = float(loan_amount)
         loan_term = int(loan_term)
@@ -51,6 +56,7 @@ def predict_loan_status(
         bank_asset_value = float(bank_asset_value)
     except (ValueError, TypeError):
         return "❌ Please enter valid numeric values."
+# -----------------------------------------------------------
 
     # 3. Negative value check
     if any(v < 0 for v in values):
@@ -67,8 +73,11 @@ def predict_loan_status(
         return "❌ Model failed to load. Please check your .pkl file."
 
     try:
+        # --- CODE BLOCK: ARRAY STRICTLY ORDERED FOR 11 FEATURES ---
         input_data = [[
             no_of_dependents,
+            education,
+            self_employed,
             income_annum,
             loan_amount,
             loan_term,
@@ -78,6 +87,7 @@ def predict_loan_status(
             luxury_assets_value,
             bank_asset_value
         ]]
+        # ----------------------------------------------------------
 
         prediction = deployed_rf.predict(input_data)
 
@@ -111,10 +121,13 @@ developer_info = """
 **Created by:** Chandan Saroj
 """
 
+# --- CODE BLOCK: RESTORED DROPDOWNS FOR UI ---
 interface = gr.Interface(
     fn=predict_loan_status,
     inputs=[
         gr.Number(label="Number of Dependents"),
+        gr.Dropdown(choices=[("Graduate", 1), ("Not Graduate", 0)], label="Education Status"),
+        gr.Dropdown(choices=[("Yes", 1), ("No", 0)], label="Self Employed?"),
         gr.Number(label="Annual Income (₹/$)"),
         gr.Number(label="Loan Amount Requested"),
         gr.Number(label="Loan Term (Months/Years)"),
@@ -129,17 +142,15 @@ interface = gr.Interface(
     description=DESCRIPTION,
     article=developer_info
 )
+# ---------------------------------------------
 
 # ==========================================================
 # Launch Configuration
 # ==========================================================
-# --- CODE BLOCK: UPDATED PORT BINDING & UNBUFFERED LAUNCH ---
 if __name__ == "__main__":
-    # Fallback to port 10000 if PORT environment variable is not explicitly set by Render
     port = int(os.environ.get("PORT", 10000))
     print(f"Starting Gradio server on 0.0.0.0:{port}...")
     interface.launch(
         server_name="0.0.0.0",
         server_port=port,
     )
-# ------------------------------------------------------------
